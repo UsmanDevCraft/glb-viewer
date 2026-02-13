@@ -1,20 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Box, Code2, Cpu, Globe2, Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import FileUploader from "../components/FileUploader";
+import SimpleGLBViewer from "../components/SimpleGLBViewer";
 
 const Home = () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const handleFileSelect = (selectedFile: File) => {
-    setFile(selectedFile);
-    console.log("File selected:", selectedFile.name);
-    // Here logic for equipping the GLB can be added later
+  const handleFileSelect = (selectedFile: File | null) => {
+    if (selectedFile) {
+      const url = URL.createObjectURL(selectedFile);
+      setPreviewUrl(url);
+    } else {
+      setPreviewUrl(null);
+    }
   };
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   return (
     <main className="min-h-screen bg-[#030712] text-white selection:bg-blue-500/30 overflow-hidden relative">
@@ -129,11 +138,26 @@ const Home = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="w-full relative py-8 scroll-mt-20"
+            className="w-full relative py-8 scroll-mt-20 flex flex-col items-center gap-12"
           >
-            {/* Decorative background for uploader */}
-            <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent rounded-[40px] -z-10 blur-2xl" />
-            <FileUploader onFileSelect={handleFileSelect} />
+            <AnimatePresence>
+              {previewUrl && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                  className="w-full max-w-4xl"
+                >
+                  <SimpleGLBViewer url={previewUrl} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="w-full relative">
+              {/* Decorative background for uploader */}
+              <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent rounded-[40px] -z-10 blur-2xl" />
+              <FileUploader onFileSelect={handleFileSelect} />
+            </div>
           </motion.div>
 
           {/* Features Grid */}

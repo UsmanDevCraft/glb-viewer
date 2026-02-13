@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import { Upload, File, X } from "lucide-react";
 
 interface FileUploaderProps {
-  onFileSelect: (file: File) => void;
+  onFileSelect: (file: File | null) => void;
 }
 
 const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect }) => {
@@ -48,6 +48,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect }) => {
   const clearFile = (e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedFile(null);
+    onFileSelect(null); // Notify parent of removal
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
