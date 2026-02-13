@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GLB Viewer & Equipper Studio
 
-## Getting Started
+A high-performance, studio-grade 3D model viewer and character customization engine built with **Next.js**, **Three.js**, and **React Three Fiber**.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 1. Premium Landing Page
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Ultra-Modern UI**: Dark mode with glassmorphism, glowing orbs, and smooth Framer Motion animations.
+- **Micro-interactions**: Hover effects and magnetic buttons for a premium feel.
+- **Developer-First**: Clean, modular structure designed for scalability.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Instant GLB Previewer
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Quick Inspection**: Drag and drop any `.glb` file to visualize it instantly.
+- **Smart Rendering**: Specialized `SimpleGLBViewer` with auto-centering, studio lighting, and orbit controls.
+- **Blob Handling**: Efficient local file handling without double-loading.
 
-## Learn More
+### 3. Equipper Studio (`/equipper`)
 
-To learn more about Next.js, take a look at the following resources:
+- **Character Customization**: A dedicated environment for building modular 3D avatars.
+- **Skeleton Rebinding**: Advanced logic to bind modular parts (heads, bodies, apparel) to a single bone hierarchy in real-time.
+- **Modular Assets**: Seamlessly swap between different genders, body types, hair styles, and outfits.
+- **Camera Presets**: Integrated controls for Zoom, Rotation, and View resets.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛠️ Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Core**: [Next.js](https://nextjs.org/) (App Router)
+- **3D Engine**: [Three.js](https://threejs.org/)
+- **React 3D**: [@react-three/fiber](https://github.com/pmndrs/react-three-fiber) & [@react-three/drei](https://github.com/pmndrs/drei)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **Icons**: [Lucide React](https://lucide.dev/)
 
-## Deploy on Vercel
+## 📦 Getting Started
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Prerequisites
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Node.js 18+
+- npm / yarn / pnpm
+
+### Installation
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/UsmanDevCraft/glb-viewer.git
+   cd glb-viewer
+   ```
+
+2. **Install dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+3. **Run the development server:**
+
+   ```bash
+   npm run dev
+   ```
+
+4. **Build for production:**
+   ```bash
+   npm run build
+   ```
+
+## 📂 Project Structure
+
+- `src/views/index.tsx`: Premium Landing Page & Uploader logic.
+- `src/views/Equipper/index.tsx`: Core Equipper Studio & Character Logic.
+- `src/components/SimpleGLBViewer.tsx`: Standalone lightweight 3D viewer.
+- `src/components/FileUploader.tsx`: Advanced drag-and-drop file handler.
+
+## 📄 License
+
+MIT License. Feel free to use this for your own 3D projects!
+
+---
+
+Crafted with ❤️ for the 3D Web.
