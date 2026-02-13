@@ -2,6 +2,8 @@
 
 A high-performance, studio-grade 3D model viewer and character customization engine built with **Next.js**, **Three.js**, and **React Three Fiber**.
 
+<img width="1850" height="1174" alt="Screenshot 2026-02-13 at 7 10 13 PM" src="https://github.com/user-attachments/assets/35a449f8-5842-4b75-a290-950cd0ed65c5" />
+
 ## 🚀 Features
 
 ### 1. Premium Landing Page
