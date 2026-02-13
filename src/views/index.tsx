@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Box, Code2, Cpu, Globe2, Sparkles } from "lucide-react";
+import { Box, Code2, Cpu, Globe2, Sparkles, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import FileUploader from "../components/FileUploader";
 
 const Home = () => {
@@ -41,6 +42,12 @@ const Home = () => {
           animate={{ opacity: 1, x: 0 }}
           className="flex items-center gap-6"
         >
+          <Link
+            href="/equipper"
+            className="text-white hover:text-blue-400 transition-colors text-sm font-medium"
+          >
+            Equipper
+          </Link>
           <a
             href="#"
             className="text-white/60 hover:text-white transition-colors text-sm font-medium"
@@ -95,12 +102,34 @@ const Home = () => {
             Seamlessly equip, inspect, and share your 3D assets in seconds.
           </motion.p>
 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="flex items-center gap-4 mb-12"
+          >
+            <Link
+              href="/equipper"
+              className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold transition-all shadow-xl shadow-blue-500/25 flex items-center gap-2 group"
+            >
+              Start Customizing{" "}
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <a
+              href="#uploader"
+              className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold transition-all backdrop-blur-xl"
+            >
+              Quick View GLB
+            </a>
+          </motion.div>
+
           {/* Upload Section */}
           <motion.div
+            id="uploader"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="w-full relative py-8"
+            className="w-full relative py-8 scroll-mt-20"
           >
             {/* Decorative background for uploader */}
             <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent rounded-[40px] -z-10 blur-2xl" />
