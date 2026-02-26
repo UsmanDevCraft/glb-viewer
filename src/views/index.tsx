@@ -209,15 +209,18 @@ const Home = () => {
             is how it works.&quot;
           </div>
           <div className="flex gap-8 text-sm font-medium text-white/40">
-            <a href="#" className="hover:text-white transition-colors">
+            <Link
+              href="/privacy-policy"
+              className="hover:text-white transition-colors"
+            >
               Privacy
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
+            </Link>
+            <Link
+              href="/terms-and-conditions"
+              className="hover:text-white transition-colors"
+            >
               Terms
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Twitter
-            </a>
+            </Link>
           </div>
         </div>
       </footer>
