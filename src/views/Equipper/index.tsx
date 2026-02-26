@@ -22,8 +22,15 @@ import {
 import Link from "next/link";
 import { useSelector } from "react-redux";
 import { RootState } from "@/src/store/store";
-import GenderDropdown from "./components/GenderDropdown";
-import AssetEquipPanel from "./components/AssetEquipPanel";
+import GenderDropdown from "../../components/GenderDropdown";
+import AssetEquipPanel from "../../components/AssetEquipPanel";
+import Dropdown from "@/src/components/Dropdown";
+import {
+  DEFAULT_BODY_FEMALE,
+  DEFAULT_BODY_MALE,
+  DEFAULT_HEADS_FEMALE,
+  DEFAULT_HEADS_MALE,
+} from "@/src/constants/avatar_assets";
 
 // ──────────────────────────────────────────────
 //  ↓  Define only the props you actually need
@@ -214,6 +221,73 @@ export default function MinimalAvatar({
   const [isZoomed, setIsZoomed] = useState(false);
   const [rotationY, setRotationY] = useState(0);
 
+  const gender = useSelector((state: RootState) => state.equipper.gender);
+  const [prevGender, setPrevGender] = useState(gender);
+
+  const [selectedHeadKey, setSelectedHeadKey] = useState(() => {
+    const defaults = DEFAULT_ASSETS(gender);
+    const headMap =
+      gender === "male" ? DEFAULT_HEADS_MALE : DEFAULT_HEADS_FEMALE;
+    return (
+      Object.keys(headMap).find(
+        (k) => headMap[k as keyof typeof headMap] === defaults.head,
+      ) || ""
+    );
+  });
+  const [selectedBodyKey, setSelectedBodyKey] = useState(() => {
+    const defaults = DEFAULT_ASSETS(gender);
+    const bodyMap = gender === "male" ? DEFAULT_BODY_MALE : DEFAULT_BODY_FEMALE;
+    return (
+      Object.keys(bodyMap).find(
+        (k) => bodyMap[k as keyof typeof bodyMap] === defaults.body,
+      ) || ""
+    );
+  });
+
+  const headOptions = useMemo(
+    () =>
+      Object.keys(
+        gender === "male" ? DEFAULT_HEADS_MALE : DEFAULT_HEADS_FEMALE,
+      ),
+    [gender],
+  );
+  const bodyOptions = useMemo(
+    () =>
+      Object.keys(gender === "male" ? DEFAULT_BODY_MALE : DEFAULT_BODY_FEMALE),
+    [gender],
+  );
+
+  // Sync defaults when gender changes during render
+  if (gender !== prevGender) {
+    setPrevGender(gender);
+    const defaults = DEFAULT_ASSETS(gender);
+    const headMap =
+      gender === "male" ? DEFAULT_HEADS_MALE : DEFAULT_HEADS_FEMALE;
+    const bodyMap = gender === "male" ? DEFAULT_BODY_MALE : DEFAULT_BODY_FEMALE;
+
+    const hKey = Object.keys(headMap).find(
+      (k) => headMap[k as keyof typeof headMap] === defaults.head,
+    );
+    const bKey = Object.keys(bodyMap).find(
+      (k) => bodyMap[k as keyof typeof bodyMap] === defaults.body,
+    );
+
+    setSelectedHeadKey(hKey || headOptions[0]);
+    setSelectedBodyKey(bKey || bodyOptions[0]);
+  }
+
+  const currentGlbAssets = useMemo(() => {
+    const headMap =
+      gender === "male" ? DEFAULT_HEADS_MALE : DEFAULT_HEADS_FEMALE;
+    const bodyMap = gender === "male" ? DEFAULT_BODY_MALE : DEFAULT_BODY_FEMALE;
+
+    return {
+      ...glbAssets,
+      head: headMap[selectedHeadKey as keyof typeof headMap] || glbAssets.head,
+      body: bodyMap[selectedBodyKey as keyof typeof bodyMap] || glbAssets.body,
+    };
+  }, [gender, selectedHeadKey, selectedBodyKey, glbAssets]);
+
   return (
     <div className="relative w-full h-screen flex bg-[#030712] overflow-hidden">
       {/* Sidebar */}
@@ -262,6 +336,38 @@ export default function MinimalAvatar({
             </div>
           </motion.div>
         </nav>
+
+        {/* Right Selection Panel */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="absolute top-32 right-8 z-30 flex flex-col gap-6 w-64 p-6 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-2xl"
+        >
+          <div className="flex flex-col gap-3">
+            <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] px-1">
+              Head Selection
+            </label>
+            <Dropdown
+              options={headOptions}
+              value={selectedHeadKey}
+              onChange={setSelectedHeadKey}
+              placeholder="Select Head"
+            />
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] px-1">
+              Body Selection
+            </label>
+            <Dropdown
+              options={bodyOptions}
+              value={selectedBodyKey}
+              onChange={setSelectedBodyKey}
+              placeholder="Select Body"
+            />
+          </div>
+        </motion.div>
 
         {/* Camera Controls Panel */}
         <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-30 flex items-center gap-4">
@@ -339,7 +445,7 @@ export default function MinimalAvatar({
 
             <Suspense fallback={null}>
               <group rotation={[0, (rotationY * Math.PI) / 180, 0]}>
-                <AvatarScene glbAssets={glbAssets} preview={preview} />
+                <AvatarScene glbAssets={currentGlbAssets} preview={preview} />
               </group>
             </Suspense>
 
