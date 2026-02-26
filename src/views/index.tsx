@@ -58,13 +58,8 @@ const Home = () => {
             Equipper
           </Link>
           <a
-            href="#"
-            className="text-white/60 hover:text-white transition-colors text-sm font-medium"
-          >
-            Docs
-          </a>
-          <a
-            href="#"
+            href="https://github.com/UsmanDevCraft/glb-viewer"
+            target="_blank"
             className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium backdrop-blur-md"
           >
             GitHub
