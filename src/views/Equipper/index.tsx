@@ -160,29 +160,44 @@ function AvatarScene({
       model.traverse((child: THREE.Object3D) => {
         if (!(child instanceof THREE.Mesh)) return;
 
-        const mat = child.material;
-        if (!(mat instanceof THREE.MeshStandardMaterial)) return;
-
         const lowerName = (child.name || "").toLowerCase();
-        const isSkin =
+        const isSkinMesh =
           /body|skin|torso|head|face/i.test(lowerName) &&
-          !/eye|cornea|sclera/i.test(lowerName);
-        const isEye =
+          !/eye|cornea|sclera|iris/i.test(lowerName);
+        const isEyeMesh =
           /eye|iris|cornea|sclera/i.test(lowerName) ||
           lowerName.includes("wolf3d_eye");
 
-        const newMat = mat.clone();
+        const updateMaterial = (mat: THREE.Material) => {
+          if (!(mat instanceof THREE.MeshStandardMaterial)) return mat;
 
-        if (isSkin && bodyTex) {
-          newMat.map = bodyTex;
-        }
-        if (isEye && eyeTex) {
-          newMat.map = eyeTex;
-          newMat.metalness = 0;
-          newMat.roughness = 0.55;
+          const matName = (mat.name || "").toLowerCase();
+          const isSkinMat =
+            /body|skin|torso|head|face/i.test(matName) &&
+            !/eye|cornea|sclera|iris/i.test(matName);
+          const isEyeMat = /eye|iris|cornea|sclera/i.test(matName);
+
+          const newMat = mat.clone();
+
+          // Apply based on mesh flags OR explicit material name flags
+          if ((isSkinMesh || isSkinMat) && bodyTex) {
+            newMat.map = bodyTex;
+          }
+          if ((isEyeMesh || isEyeMat) && eyeTex) {
+            newMat.map = eyeTex;
+            newMat.metalness = 0;
+            newMat.roughness = 0.55;
+          }
+
+          return newMat;
+        };
+
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map(updateMaterial);
+        } else {
+          child.material = updateMaterial(child.material);
         }
 
-        child.material = newMat;
         child.frustumCulled = false;
       });
 

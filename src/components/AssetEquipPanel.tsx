@@ -81,9 +81,10 @@ const AssetEquipPanel = () => {
                 type="file"
                 accept=".glb"
                 className="hidden"
-                onChange={(e) =>
-                  handleFileChange(asset.id, e.target.files?.[0] || null)
-                }
+                onChange={(e) => {
+                  handleFileChange(asset.id, e.target.files?.[0] || null);
+                  e.target.value = "";
+                }}
               />
               <div
                 className={`
