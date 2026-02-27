@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { useState, useMemo, Suspense, useEffect } from "react";
+import { useState, useMemo, Suspense, useEffect, useCallback } from "react";
 import {
   Environment,
   Grid,
@@ -9,6 +9,7 @@ import {
   useGLTF,
   useTexture,
   useProgress,
+  useAnimations,
 } from "@react-three/drei";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
@@ -19,6 +20,8 @@ import {
   RotateCw,
   Maximize2,
   Minimize2,
+  Play,
+  Pause,
 } from "lucide-react";
 import Link from "next/link";
 import { useSelector } from "react-redux";
@@ -83,6 +86,10 @@ const DEFAULT_ASSETS = (gender: "male" | "female") => ({
   bodyColorTexture: "/Skin-Color/7.png",
   eyeColorTexture:
     "https://simmingai.s3.us-east-1.amazonaws.com/simmingAssets/17633719094171700634379-1622793664-eye-04-mask-1699880622457-1700634386564.png",
+  animation:
+    gender === "male"
+      ? "/Animations/M_Standing_Idle_001.glb"
+      : "/Animations/F_Standing_Idle_001.glb",
 });
 
 // ──────────────────────────────────────────────
@@ -91,9 +98,11 @@ const DEFAULT_ASSETS = (gender: "male" | "female") => ({
 function AvatarScene({
   glbAssets = {},
   preview = {},
+  enableAnimation = true,
 }: {
   glbAssets: MinimalAvatarProps["glbAssets"];
   preview: MinimalAvatarProps["preview"];
+  enableAnimation?: boolean;
 }) {
   const gender = useSelector((state: RootState) => state.equipper.gender);
   const customAssets = useSelector(
@@ -120,6 +129,7 @@ function AvatarScene({
       preview?.eyeColorTexture ||
       glbAssets.eyeColorTexture ||
       defaults.eyeColorTexture,
+    animation: defaults.animation,
   };
 
   // Load models
@@ -150,68 +160,184 @@ function AvatarScene({
     return t;
   }, [eyeTexRaw]);
 
+  // Helper to re-map materials for skin and eyes
+  const updateMaterial = useCallback(
+    (mat: THREE.Material, meshName: string = "") => {
+      if (!(mat instanceof THREE.MeshStandardMaterial)) return mat;
+
+      const matName = (mat.name || "").toLowerCase();
+      const lowerMeshName = meshName.toLowerCase();
+
+      const isSkinMesh =
+        /body|skin|torso|head|face/i.test(lowerMeshName) &&
+        !/eye|cornea|sclera|iris/i.test(lowerMeshName);
+      const isSkinMat =
+        /body|skin|torso|head|face/i.test(matName) &&
+        !/eye|cornea|sclera|iris/i.test(matName);
+
+      const isEyeMesh =
+        /eye|iris|cornea|sclera/i.test(lowerMeshName) ||
+        lowerMeshName.includes("wolf3d_eye");
+      const isEyeMat = /eye|iris|cornea|sclera/i.test(matName);
+
+      const newMat = mat.clone();
+
+      if ((isSkinMesh || isSkinMat) && bodyTex) {
+        newMat.map = bodyTex;
+      }
+      if ((isEyeMesh || isEyeMat) && eyeTex) {
+        newMat.map = eyeTex;
+        newMat.metalness = 0;
+        newMat.roughness = 0.55;
+      }
+
+      return newMat;
+    },
+    [bodyTex, eyeTex],
+  );
+
   // Combined scene (memoized → only rebuild when inputs change)
   const scene = useMemo(() => {
-    const root = new THREE.Group();
+    // Use body as base and apply material fix
+    const combined = SkeletonUtils.clone(bodyGLTF.scene) as THREE.Group;
+    combined.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.material = Array.isArray(child.material)
+          ? child.material.map((m) => updateMaterial(m, child.name))
+          : updateMaterial(child.material, child.name);
+        child.frustumCulled = false;
+      }
+    });
 
-    const addPart = (gltf: { scene: THREE.Group }) => {
-      const model = SkeletonUtils.clone(gltf.scene) as THREE.Group;
+    // Build bone map from base body
+    const bonesByName: Record<string, THREE.Bone> = {};
+    combined.traverse((child) => {
+      if (child instanceof THREE.Bone) {
+        bonesByName[child.name] = child;
+      }
+    });
 
-      model.traverse((child: THREE.Object3D) => {
-        if (!(child instanceof THREE.Mesh)) return;
+    // Find head bone (try common names)
+    const headBone =
+      bonesByName["Head"] ||
+      bonesByName["Wolf3D_Head"] ||
+      bonesByName["mixamorigHead"] ||
+      Object.values(bonesByName).find((b) => /head/i.test(b.name));
 
-        const lowerName = (child.name || "").toLowerCase();
-        const isSkinMesh =
-          /body|skin|torso|head|face/i.test(lowerName) &&
-          !/eye|cornea|sclera|iris/i.test(lowerName);
-        const isEyeMesh =
-          /eye|iris|cornea|sclera/i.test(lowerName) ||
-          lowerName.includes("wolf3d_eye");
+    if (!headBone) {
+      console.warn("Head bone not found – some parts may not attach properly");
+    }
 
-        const updateMaterial = (mat: THREE.Material) => {
-          if (!(mat instanceof THREE.MeshStandardMaterial)) return mat;
-
-          const matName = (mat.name || "").toLowerCase();
-          const isSkinMat =
-            /body|skin|torso|head|face/i.test(matName) &&
-            !/eye|cornea|sclera|iris/i.test(matName);
-          const isEyeMat = /eye|iris|cornea|sclera/i.test(matName);
-
-          const newMat = mat.clone();
-
-          // Apply based on mesh flags OR explicit material name flags
-          if ((isSkinMesh || isSkinMat) && bodyTex) {
-            newMat.map = bodyTex;
+    const addBodyPart = (gltfScene: THREE.Group, partName: string) => {
+      gltfScene.traverse((child) => {
+        let resolvedPartName = partName;
+        // Auto-detect sub-parts inside head GLB
+        if (partName === "head") {
+          // Match Wolf3D naming: Wolf3D_Eyes, Wolf3D_Teeth, Wolf3D_Head
+          if (/eye/i.test(child.name) || child.name.includes("Wolf3D_Eye")) {
+            resolvedPartName = "eyes";
+          } else if (
+            /teeth|tooth/i.test(child.name) ||
+            child.name.includes("Wolf3D_Teeth")
+          ) {
+            resolvedPartName = "teeth";
+          } else if (
+            /beard|mustache|facial_hair|facialhair/i.test(child.name) ||
+            child.name.includes("Wolf3D_Beard")
+          ) {
+            // Skip beard/mustache meshes baked into the head GLB.
+            return;
+          } else if (
+            child.name.includes("Head") ||
+            child.name.includes("Wolf3D_Head")
+          ) {
+            resolvedPartName = "skin";
+          } else {
+            resolvedPartName = "skin";
           }
-          if ((isEyeMesh || isEyeMat) && eyeTex) {
-            newMat.map = eyeTex;
-            newMat.metalness = 0;
-            newMat.roughness = 0.55;
-          }
-
-          return newMat;
-        };
-
-        if (Array.isArray(child.material)) {
-          child.material = child.material.map(updateMaterial);
-        } else {
-          child.material = updateMaterial(child.material);
         }
 
-        child.frustumCulled = false;
-      });
+        if (child instanceof THREE.Mesh) {
+          const clonedMesh = child.clone();
 
-      root.add(model);
+          clonedMesh.material = Array.isArray(clonedMesh.material)
+            ? clonedMesh.material.map((m) => updateMaterial(m, child.name))
+            : updateMaterial(clonedMesh.material, child.name);
+
+          const isSkinned = child instanceof THREE.SkinnedMesh;
+
+          if (isSkinned) {
+            const skinnedChild = child as THREE.SkinnedMesh;
+            const newBones: THREE.Bone[] = [];
+            skinnedChild.skeleton.bones.forEach((bone) => {
+              const templateBone = bonesByName[bone.name];
+              if (templateBone) {
+                newBones.push(templateBone);
+              }
+            });
+
+            if (newBones.length === skinnedChild.skeleton.bones.length) {
+              const newSkeleton = new THREE.Skeleton(
+                newBones,
+                skinnedChild.skeleton.boneInverses.map((m) => m.clone()),
+              );
+
+              const skinnedClone = clonedMesh as THREE.SkinnedMesh;
+              const bindMatrixClone = skinnedChild.bindMatrix.clone();
+              skinnedClone.skeleton = newSkeleton;
+              skinnedClone.bind(newSkeleton, bindMatrixClone);
+              skinnedClone.bindMatrixInverse.copy(bindMatrixClone).invert();
+              skinnedClone.frustumCulled = false;
+
+              if (skinnedClone.geometry.boundingSphere === null) {
+                skinnedClone.geometry.computeBoundingSphere();
+              }
+              if (skinnedClone.geometry.boundingBox === null) {
+                skinnedClone.geometry.computeBoundingBox();
+              }
+
+              skinnedClone.pose();
+              skinnedClone.visible = true;
+
+              // Attach to head bone if head part
+              const isHeadPart = ["skin", "eyes", "teeth", "hair"].includes(
+                resolvedPartName,
+              );
+              if (isHeadPart && headBone) {
+                headBone.add(skinnedClone);
+              } else {
+                combined.add(skinnedClone);
+              }
+              return;
+            } else {
+              console.warn(
+                `Bone mismatch for ${resolvedPartName} (${child.name}), adding as static`,
+              );
+            }
+          }
+
+          // Static attachment for non-skinned meshes
+          const isHeadPart = ["skin", "eyes", "teeth", "hair"].includes(
+            resolvedPartName,
+          );
+          clonedMesh.frustumCulled = false;
+          if (isHeadPart && headBone) {
+            headBone.add(clonedMesh);
+          } else {
+            combined.add(clonedMesh);
+          }
+        }
+      });
     };
 
-    addPart(bodyGLTF);
-    addPart(headGLTF);
-    addPart(hairGLTF);
-    addPart(shirtGLTF);
-    addPart(pantsGLTF);
-    addPart(shoesGLTF);
+    // Add parts (body is already base, so start with head)
+    addBodyPart(headGLTF.scene, "head");
+    addBodyPart(hairGLTF.scene, "hair");
+    addBodyPart(shirtGLTF.scene, "shirt");
+    addBodyPart(pantsGLTF.scene, "pants");
+    addBodyPart(shoesGLTF.scene, "shoes");
 
-    return root;
+    return combined;
   }, [
     bodyGLTF,
     headGLTF,
@@ -219,11 +345,58 @@ function AvatarScene({
     shirtGLTF,
     pantsGLTF,
     shoesGLTF,
-    bodyTex,
-    eyeTex,
+    updateMaterial,
   ]);
 
-  return <primitive object={scene} />;
+  return (
+    <AnimatedCombinedScene
+      key={scene.uuid}
+      combinedScene={scene}
+      animationPath={final.animation}
+      enableAnimation={enableAnimation}
+    />
+  );
+}
+
+function AnimatedCombinedScene({
+  combinedScene,
+  animationPath,
+  enableAnimation,
+}: {
+  combinedScene: THREE.Group;
+  animationPath: string;
+  enableAnimation: boolean;
+}) {
+  const animationGLTF = useGLTF(animationPath);
+  const animationClips = useMemo(() => {
+    if (!animationGLTF) return [];
+    const raw = Array.isArray(animationGLTF)
+      ? animationGLTF[0]?.animations
+      : animationGLTF.animations;
+    return Array.isArray(raw) ? raw : [];
+  }, [animationGLTF]);
+  const { actions, names } = useAnimations(animationClips, combinedScene);
+  useEffect(() => {
+    if (!enableAnimation) {
+      Object.values(actions).forEach((action) => action?.stop());
+      return;
+    }
+
+    if (animationClips.length > 0 && names[0]) {
+      const action = actions[names[0]];
+      if (action) {
+        action.reset().setLoop(THREE.LoopRepeat, Infinity).fadeIn(0.5).play();
+      }
+    }
+  }, [
+    animationClips,
+    names,
+    actions,
+    combinedScene,
+    animationPath,
+    enableAnimation,
+  ]);
+  return <primitive object={combinedScene} scale={1} castShadow />;
 }
 
 function LoadingOverlay() {
@@ -279,6 +452,7 @@ export default function MinimalAvatar({
 }: MinimalAvatarProps) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [rotationY, setRotationY] = useState(0);
+  const [isAnimationEnabled, setIsAnimationEnabled] = useState(true);
 
   const gender = useSelector((state: RootState) => state.equipper.gender);
   const [prevGender, setPrevGender] = useState(gender);
@@ -426,6 +600,35 @@ export default function MinimalAvatar({
               placeholder="Select Body"
             />
           </div>
+
+          <div className="w-full h-px bg-white/10 my-1" />
+
+          <div className="flex items-center justify-between px-1">
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-white tracking-wide">
+                Animations
+              </span>
+              <span className="text-[10px] text-white/30">Idle movement</span>
+            </div>
+            <button
+              onClick={() => setIsAnimationEnabled(!isAnimationEnabled)}
+              className={`w-12 h-6 rounded-full transition-all relative ${
+                isAnimationEnabled ? "bg-blue-500" : "bg-white/10"
+              }`}
+            >
+              <motion.div
+                animate={{ x: isAnimationEnabled ? 26 : 4 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg flex items-center justify-center"
+              >
+                {isAnimationEnabled ? (
+                  <Play className="w-2 h-2 text-blue-500 fill-current" />
+                ) : (
+                  <Pause className="w-2 h-2 text-white/40 fill-current" />
+                )}
+              </motion.div>
+            </button>
+          </div>
         </motion.div>
 
         {/* Camera Controls Panel */}
@@ -505,7 +708,11 @@ export default function MinimalAvatar({
 
             <Suspense fallback={null}>
               <group rotation={[0, (rotationY * Math.PI) / 180, 0]}>
-                <AvatarScene glbAssets={currentGlbAssets} preview={preview} />
+                <AvatarScene
+                  glbAssets={currentGlbAssets}
+                  preview={preview}
+                  enableAnimation={isAnimationEnabled}
+                />
               </group>
             </Suspense>
 
