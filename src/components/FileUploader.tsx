@@ -2,10 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { Upload, File, X } from "lucide-react";
-
-interface FileUploaderProps {
-  onFileSelect: (file: File | null) => void;
-}
+import { FileUploaderProps } from "../types";
 
 const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect }) => {
   const [isDragging, setIsDragging] = useState(false);

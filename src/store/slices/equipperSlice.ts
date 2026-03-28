@@ -1,14 +1,5 @@
+import { EquipperState } from "@/src/types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-
-interface EquipperState {
-  gender: "male" | "female";
-  customAssets: {
-    hair: string | null;
-    shirt: string | null;
-    pants: string | null;
-    shoes: string | null;
-  };
-}
 
 const initialState: EquipperState = {
   gender: "male",

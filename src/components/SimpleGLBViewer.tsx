@@ -12,10 +12,7 @@ import {
 } from "@react-three/drei";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-
-interface SimpleGLBViewerProps {
-  url: string;
-}
+import { SimpleGLBViewerProps } from "../types";
 
 const Model = ({ url }: { url: string }) => {
   const { scene } = useGLTF(url);
