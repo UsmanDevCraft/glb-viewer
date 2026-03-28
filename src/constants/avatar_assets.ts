@@ -23,6 +23,32 @@ export const DEFAULT_BODY_FEMALE = {
   body6: "/Body-Variants/Female/Female_Body_v06.glb",
 };
 
+export const OUTFITS_MALE = {
+  outfit1: "/Outfits/male_outfit_glbs/outfit-doctor-01-v2-m.glb",
+  outfit2: "/Outfits/male_outfit_glbs/outfit-farmer-01-m.glb",
+  outfit3: "/Outfits/male_outfit_glbs/outfit-firefighter-01-m.glb",
+  outfit4: "/Outfits/male_outfit_glbs/outfit-journalist-01-m.glb",
+  outfit5: "/Outfits/male_outfit_glbs/outfit-mechanic-02-m.glb",
+  outfit6: "/Outfits/male_outfit_glbs/outfit-nurse-m-02.glb",
+  outfit7: "/Outfits/male_outfit_glbs/outfit-pilot-01-m.glb",
+  outfit8: "/Outfits/male_outfit_glbs/outfit-police-01-m.glb",
+  outfit9: "/Outfits/male_outfit_glbs/outfit-retailsalesperson-01-m.glb",
+  outfit10: "/Outfits/male_outfit_glbs/outfit-software-engineer-01-m.glb",
+};
+
+export const OUTFITS_FEMALE = {
+  outfit1: "/Outfits/female_outfit_glbs/outfit-doctor-01-v2-f.glb",
+  outfit2: "/Outfits/female_outfit_glbs/outfit-farmer-02-f.glb",
+  outfit3: "/Outfits/female_outfit_glbs/outfit-firefighter-02-f.glb",
+  outfit4: "/Outfits/female_outfit_glbs/outfit-journalist-02-f.glb",
+  outfit5: "/Outfits/female_outfit_glbs/outfit-mechanic-01-f.glb",
+  outfit6: "/Outfits/female_outfit_glbs/outfit-nurse-f-01.glb",
+  outfit7: "/Outfits/female_outfit_glbs/outfit-pilot-01-f.glb",
+  outfit8: "/Outfits/female_outfit_glbs/outfit-police-02-f.glb",
+  outfit9: "/Outfits/female_outfit_glbs/outfit-retailsalesperson-02-f.glb",
+  outfit10: "/Outfits/female_outfit_glbs/outfit-software-engineer-f.glb",
+};
+
 export const DEFAULT_ASSETS = (gender: "male" | "female") => ({
   body:
     gender === "male"
