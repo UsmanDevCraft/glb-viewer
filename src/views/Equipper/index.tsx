@@ -293,7 +293,7 @@ export default function MinimalAvatar({
 
             <Suspense fallback={null}>
               <group
-                position={[0, -1, 0]}
+                position={[0, -1.2, 0]}
                 rotation={[0, (rotationY * Math.PI) / 180, 0]}
               >
                 <AvatarScene
@@ -325,7 +325,7 @@ export default function MinimalAvatar({
               fadeStrength={1}
               followCamera={false}
               infiniteGrid={true}
-              position={[0, -0.01, 0]}
+              position={[0, -1.2, 0]}
             />
           </Canvas>
         </div>
