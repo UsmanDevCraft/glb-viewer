@@ -40,5 +40,5 @@ export function AnimatedCombinedScene({
     animationPath,
     enableAnimation,
   ]);
-  return <primitive object={combinedScene} scale={1} castShadow />;
+  return <primitive object={combinedScene} scale={1.5} castShadow />;
 }

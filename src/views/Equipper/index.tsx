@@ -292,7 +292,10 @@ export default function MinimalAvatar({
             <Environment preset="apartment" />
 
             <Suspense fallback={null}>
-              <group rotation={[0, (rotationY * Math.PI) / 180, 0]}>
+              <group
+                position={[0, -1, 0]}
+                rotation={[0, (rotationY * Math.PI) / 180, 0]}
+              >
                 <AvatarScene
                   glbAssets={currentGlbAssets}
                   preview={preview}
